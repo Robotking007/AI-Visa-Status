@@ -1,0 +1,170 @@
+================================================================================
+DATA EXPLORATION REPORT
+================================================================================
+
+Generated: 2026-02-14 22:36:07
+Dataset: data/processed_visa_dataset.csv
+
+================================================================================
+BASIC DATASET INFORMATION
+================================================================================
+
+Shape: 135,858 rows × 37 columns
+
+Memory Usage: 27.47 MB
+
+Column Data Types:
+int64      13
+float64    12
+bool       12
+Name: count, dtype: int64
+
+First 5 Rows:
+   caseNumberFull  consulate  ...  status_Transfer  status_Transfer in Progress
+0              37         69  ...            False                        False
+1              79         69  ...            False                        False
+2              87          2  ...            False                        False
+3              93         69  ...            False                        False
+4              97         69  ...            False                        False
+
+[5 rows x 37 columns]
+
+Dataset Info:
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 135858 entries, 0 to 135857
+Data columns (total 37 columns):
+ #   Column                            Non-Null Count   Dtype  
+---  ------                            --------------   -----  
+ 0   caseNumberFull                    135858 non-null  int64  
+ 1   consulate                         135858 non-null  int64  
+ 2   fiscal_year                       135858 non-null  int64  
+ 3   caseNumber                        135858 non-null  float64
+ 4   Issued                            135858 non-null  float64
+ 5   AP                                135858 non-null  float64
+ 6   Ready                             135858 non-null  float64
+ 7   Refused                           135858 non-null  float64
+ 8   InTransit                         135858 non-null  float64
+ 9   Transfer                          135858 non-null  float64
+ 10  NVC                               135858 non-null  float64
+ 11  potentialAP                       135858 non-null  float64
+ 12  Refused221g                       135858 non-null  float64
+ 13  processing_time_days              135858 non-null  float64
+ 14  submit_year                       135858 non-null  int64  
+ 15  submit_month                      135858 non-null  int64  
+ 16  submit_quarter                    135858 non-null  int64  
+ 17  submit_day_of_week                135858 non-null  int64  
+ 18  submit_day_of_year                135858 non-null  int64  
+ 19  is_issued                         135858 non-null  int64  
+ 20  is_refused                        135858 non-null  int64  
+ 21  is_administrative_processing      135858 non-null  int64  
+ 22  is_ready                          135858 non-null  int64  
+ 23  is_refused_221g                   135858 non-null  int64  
+ 24  case_number                       135858 non-null  float64
+ 25  region_AS                         135858 non-null  bool   
+ 26  region_EU                         135858 non-null  bool   
+ 27  region_OC                         135858 non-null  bool   
+ 28  region_SA                         135858 non-null  bool   
+ 29  status_Administrative Processing  135858 non-null  bool   
+ 30  status_Issued                     135858 non-null  bool   
+ 31  status_Ready                      135858 non-null  bool   
+ 32  status_Refused                    135858 non-null  bool   
+ 33  status_Refused221g                135858 non-null  bool   
+ 34  status_Returned to NVC            135858 non-null  bool   
+ 35  status_Transfer                   135858 non-null  bool   
+ 36  status_Transfer in Progress       135858 non-null  bool   
+dtypes: bool(12), float64(12), int64(13)
+memory usage: 27.5 MB
+
+================================================================================
+MISSING VALUES ANALYSIS
+================================================================================
+
+No missing values found!
+
+================================================================================
+NUMERICAL FEATURES SUMMARY
+================================================================================
+
+                                 count          mean  ...        75%       max
+caseNumberFull                135858.0  67928.500000  ...  101892.75  135857.0
+consulate                     135858.0     63.686489  ...      96.00     138.0
+fiscal_year                   135858.0      4.978426  ...       8.00      11.0
+caseNumber                    135858.0  14109.174005  ...   16860.50  120874.0
+Issued                        135858.0      1.317744  ...       1.00      15.0
+AP                            135858.0      0.020256  ...       0.00       8.0
+Ready                         135858.0      0.228319  ...       0.00      10.0
+Refused                       135858.0      0.149053  ...       0.00      11.0
+InTransit                     135858.0      0.000000  ...       0.00       0.0
+Transfer                      135858.0      0.001053  ...       0.00       5.0
+NVC                           135858.0      0.000007  ...       0.00       1.0
+potentialAP                   135858.0      0.032313  ...       0.00       1.0
+Refused221g                   135858.0      0.022899  ...       0.00       9.0
+processing_time_days          135858.0    577.948932  ...     666.00     730.0
+submit_year                   135858.0   2016.553806  ...    2020.00    2023.0
+submit_month                  135858.0     10.299320  ...      11.00      11.0
+submit_quarter                135858.0      4.000000  ...       4.00       4.0
+submit_day_of_week            135858.0      2.904724  ...       5.00       6.0
+submit_day_of_year            135858.0    297.696757  ...     306.00     326.0
+is_issued                     135858.0      1.007964  ...       1.00      15.0
+is_refused                    135858.0      0.149053  ...       0.00      11.0
+is_administrative_processing  135858.0      0.020256  ...       0.00       8.0
+is_ready                      135858.0      0.228319  ...       0.00      10.0
+is_refused_221g               135858.0      0.022899  ...       0.00       9.0
+case_number                   135858.0  14109.174005  ...   16860.50  120874.0
+
+[25 rows x 8 columns]
+
+================================================================================
+CATEGORICAL FEATURES SUMMARY
+================================================================================
+
+No categorical columns found.
+
+================================================================================
+TARGET VARIABLE ANALYSIS: processing_time_days
+================================================================================
+
+Count: 135,858
+Mean: 577.95
+Median: 591.00
+Std Dev: 98.24
+Min: 313.00
+Max: 730.00
+
+Percentiles:
+  10th: 434.00
+  25th: 504.00
+  50th: 591.00
+  75th: 666.00
+  90th: 696.00
+  95th: 705.00
+  99th: 720.00
+
+================================================================================
+CORRELATION ANALYSIS WITH processing_time_days
+================================================================================
+
+Top 15 features correlated with processing_time_days:
+processing_time_days            1.000000
+caseNumber                      0.353067
+case_number                     0.353067
+is_issued                       0.110221
+submit_day_of_year              0.099970
+Issued                          0.094854
+submit_month                    0.074637
+Refused                         0.073787
+is_refused                      0.073787
+is_administrative_processing    0.067848
+AP                              0.067848
+is_ready                        0.056522
+Ready                           0.056522
+caseNumberFull                  0.053692
+submit_year                     0.032807
+Name: processing_time_days, dtype: float64
+
+================================================================================
+DATA QUALITY CHECK
+================================================================================
+
+Data Quality Issues Found:
+  1. Found 2 constant columns: ['InTransit', 'submit_quarter']
