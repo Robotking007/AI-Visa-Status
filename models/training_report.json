@@ -1,0 +1,89 @@
+{
+  "model_name": "Extra Trees",
+  "train_date": "2026-02-26 23:22",
+  "n_features": 29,
+  "test_metrics": {
+    "MAE": 55.9914,
+    "RMSE": 74.7357,
+    "R2": 0.4254,
+    "MAPE": 10.3775
+  },
+  "extra_info": {
+    "baseline_ranking": [
+      {
+        "rank": 1,
+        "model": "Extra Trees",
+        "MAE": 55.92,
+        "RMSE": 75.12,
+        "R2": 0.4195,
+        "MAPE": 10.36
+      },
+      {
+        "rank": 2,
+        "model": "Random Forest",
+        "MAE": 56.13,
+        "RMSE": 74.95,
+        "R2": 0.4222,
+        "MAPE": 10.4
+      },
+      {
+        "rank": 3,
+        "model": "Gradient Boosting",
+        "MAE": 59.17,
+        "RMSE": 75.54,
+        "R2": 0.4129,
+        "MAPE": 10.96
+      },
+      {
+        "rank": 4,
+        "model": "Ridge Regression",
+        "MAE": 74.85,
+        "RMSE": 89.13,
+        "R2": 0.1828,
+        "MAPE": 13.97
+      },
+      {
+        "rank": 5,
+        "model": "Linear Regression",
+        "MAE": 74.85,
+        "RMSE": 89.13,
+        "R2": 0.1828,
+        "MAPE": 13.97
+      },
+      {
+        "rank": 6,
+        "model": "Lasso Regression",
+        "MAE": 74.87,
+        "RMSE": 89.17,
+        "R2": 0.1821,
+        "MAPE": 13.98
+      }
+    ],
+    "cv_results": {
+      "Extra Trees": {
+        "CV_MAE_mean": 69.9672,
+        "CV_MAE_std": 11.0887,
+        "CV_RMSE_mean": 87.262,
+        "CV_RMSE_std": 11.6142,
+        "CV_R2_mean": 0.1594,
+        "CV_R2_std": 0.254
+      },
+      "Random Forest": {
+        "CV_MAE_mean": 71.2457,
+        "CV_MAE_std": 10.8903,
+        "CV_RMSE_mean": 88.51,
+        "CV_RMSE_std": 11.5457,
+        "CV_R2_mean": 0.1349,
+        "CV_R2_std": 0.2621
+      },
+      "Gradient Boosting": {
+        "CV_MAE_mean": 71.2804,
+        "CV_MAE_std": 10.7335,
+        "CV_RMSE_mean": 87.7218,
+        "CV_RMSE_std": 11.3654,
+        "CV_R2_mean": 0.1517,
+        "CV_R2_std": 0.2546
+      }
+    }
+  }
+}

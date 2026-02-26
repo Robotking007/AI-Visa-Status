@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data files (large CSVs — not tracked in git)
+data/*.csv
+data/*.xlsx
+data/*.txt
+data/*.log
+
+# Trained model binaries (large)
+models/*.joblib
+models/*.pkl
+models/*.h5
+
+# Temporary / debug files
+_adv_log*.txt
+_test_*.py
+
+# Plots (generated — not tracked)
+plots/
+
+# OS
+.DS_Store
+Thumbs.db
