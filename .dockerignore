@@ -1,0 +1,35 @@
+# .dockerignore — exclude unnecessary files from Docker build context
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+.git/
+.gitignore
+.vscode/
+.env
+*.env
+plots/
+*.png
+*.jpg
+*.jpeg
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Large raw data files not needed at runtime
+data/h1b_*.csv
+data/VISA_Details_*.csv
+data/FY201*.csv
+data/ndsap_*.csv
+data/ceac-*.csv
+data/global_*.csv
+data/visaData.csv
+data/academic*.csv
+data/field_*.csv
+data/origin.csv
+data/source_*.csv
+data/status.csv
+data/Combined_LCA_*.csv
+data/exploration_report.txt
+data/eda_run_log.txt
+data/data_summary.txt

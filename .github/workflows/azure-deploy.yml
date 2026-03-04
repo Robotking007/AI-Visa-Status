@@ -1,0 +1,56 @@
+# GitHub Actions — Deploy to Azure Web App
+# =========================================
+# Prerequisites (set in GitHub repo Secrets):
+#   AZURE_WEBAPP_PUBLISH_PROFILE  — downloaded from Azure Portal → Web App → Deployment Center
+#   AZURE_WEBAPP_NAME             — e.g. "visa-estimator"
+#
+# Azure Web App configuration:
+#   Runtime: Python 3.10
+#   Startup command:
+#     gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT
+# OR for Streamlit:
+#     streamlit run streamlit_app.py --server.port $PORT --server.headless true
+
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Smoke-test predictor
+        run: |
+          python -c "
+          import json, sys
+          from predictor import get_predictor
+          p = get_predictor()
+          r = p.predict('KGL', '2024-06-15', 1000)
+          assert r['predicted_days'] > 0, 'Prediction is zero or negative'
+          print('Smoke test passed:', json.dumps({'predicted_days': r['predicted_days'], 'category': r['category']}))
+          "
+
+      - name: Deploy Flask API to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name:        ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package:         .

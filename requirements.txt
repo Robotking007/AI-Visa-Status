@@ -1,23 +1,34 @@
-# Data Processing and Analysis
+# ── Data Processing and Analysis ─────────────────────────────────────────────
 pandas>=2.0.0
 numpy>=1.24.0
 scikit-learn>=1.3.0
 scipy>=1.11.0
 
-# Data Visualization
+# ── Data Visualization ────────────────────────────────────────────────────────
 matplotlib>=3.7.0
 seaborn>=0.12.0
 
-# Utilities
+# ── Utilities ─────────────────────────────────────────────────────────────────
 python-dateutil>=2.8.0
 openpyxl>=3.1.0
 
-# Gradient boosting
+# ── Gradient Boosting ─────────────────────────────────────────────────────────
 xgboost>=2.0.0
 lightgbm>=4.0.0
 
-# Model persistence
+# ── Model Persistence ─────────────────────────────────────────────────────────
 joblib>=1.3.0
 
-# Progress bars (optional)
+# ── Progress Bars ─────────────────────────────────────────────────────────────
 tqdm>=4.65.0
+
+# ── Web App — Flask (REST API backend) ───────────────────────────────────────
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
+
+# ── Web App — Streamlit (frontend) ───────────────────────────────────────────
+streamlit>=1.32.0
+
+# ── Web App — HTTP client (Streamlit → Flask) ────────────────────────────────
+requests>=2.31.0
