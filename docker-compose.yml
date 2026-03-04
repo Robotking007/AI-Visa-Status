@@ -1,5 +1,13 @@
 # docker-compose.yml — local development with hot-reload
-# Usage: docker compose up --build
+# =========================================================
+# The model binary is NOT in git (~837 MB).
+# It is mounted from your local models/ directory.
+#
+# Usage:
+#   docker compose up --build
+#
+# If you want auto-download instead of mounting, set MODEL_URL:
+#   MODEL_URL=https://... docker compose up --build
 
 version: "3.9"
 
@@ -19,16 +27,19 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - .:/app          # mount source for hot-reload
+      - .:/app                        # mount source for hot-reload
+      - ./models:/app/models          # mount model binary (best_model.joblib)
     environment:
       - DEBUG=true
       - PORT=5000
+      # Uncomment to enable auto-download instead of using the volume:
+      # - MODEL_URL=https://your-storage/best_model.joblib
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     restart: unless-stopped
 
   # ── Streamlit UI ───────────────────────────────────────────────────────────
@@ -44,7 +55,8 @@ services:
     ports:
       - "8501:8501"
     volumes:
-      - .:/app          # mount source for hot-reload
+      - .:/app                        # mount source for hot-reload
+      - ./models:/app/models          # mount model binary
     environment:
       - API_URL=http://api:5000
     depends_on:

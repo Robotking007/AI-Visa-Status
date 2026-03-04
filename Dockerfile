@@ -1,116 +1,69 @@
-# ── Dockerfile ────────────────────────────────────────────────────────────────# ── Dockerfile ────────────────────────────────────────────────────────────────
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CMD ["bash", "start.sh"]# Runs both Flask (daemonized) and Streamlit (foreground)# ── Default command ───────────────────────────────────────────────────────────  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \# ── Health check ──────────────────────────────────────────────────────────────EXPOSE 5000 8501# ── Expose ports ──────────────────────────────────────────────────────────────USER appuserRUN useradd -m appuser && chown -R appuser /app# Create a non-root user for securityCOPY data/FY2025-ceac-2025-10-01.csv   data/COPY data/FY2024-ceac-2024-10-01.csv   data/COPY data/FY2023-ceac-2023-06-24.csv   data/COPY data/FY2022-ceac-current.csv      data/COPY data/FY2021-ceac-current.csv      data/COPY data/FY2020-ceac-current.csv      data/COPY data/processed_visa_dataset.csv   data/COPY data/engineered_visa_dataset.csv  data/COPY models/       models/COPY predictor.py  app.py  streamlit_app.py  start.sh  ./# ── Copy application source ───────────────────────────────────────────────────    pip install --no-cache-dir -r requirements.txtRUN pip install --upgrade pip && \# Upgrade pip first to avoid resolver issuesCOPY requirements.txt .# ── Install Python dependencies ───────────────────────────────────────────────WORKDIR /app    && rm -rf /var/lib/apt/lists/*    libgomp1 \    build-essential \RUN apt-get update && apt-get install -y --no-install-recommends \# System dependenciesFROM python:3.10-slim AS base# ─────────────────────────────────────────────────────────────────────────────# Run:     docker run -p 5000:5000 -p 8501:8501 visa-estimator# Build:   docker build -t visa-estimator .##   - Streamlit frontend      → port 8501#   - Flask API  (gunicorn)   → port 5000# Multi-stage build that produces a slim production image containing:# Multi-stage build for the Visa Processing Time Estimator
+# ── Dockerfile ────────────────────────────────────────────────────────────────
+# NOTE: The trained model binary (best_model.joblib, ~837 MB) is NOT stored in
+# git and is NOT copied into this image. Provide it at runtime via ONE of:
 #
-# Stage 1 – base runtime
-# Stage 2 – dependency installation  
-# Stage 3 – application image
+#   Option A — Docker volume / bind mount (recommended for local/self-hosted):
+#     docker run -v /host/path/to/models:/app/models -p 5000:5000 -p 8501:8501 visa-estimator
 #
-# Build:
-#   docker build -t visa-estimator .
+#   Option B — Environment variable download (recommended for cloud):
+#     docker run -e MODEL_URL="https://your-storage/best_model.joblib" ...
+#     The app will auto-download via download_model.py on first start.
 #
-# Run (both services via start.sh):
-#   docker run -p 5000:5000 -p 8501:8501 visa-estimator
+#   Option C — Azure File Share / AWS EFS mounted at /app/models
 #
-# Run (Flask API only):
-#   docker run -p 5000:5000 -e PORT=5000 visa-estimator gunicorn app:app --bind 0.0.0.0:5000
-#
-# Run (Streamlit only, with direct predictor):
-#   docker run -p 8501:8501 visa-estimator streamlit run streamlit_app.py --server.port 8501
+# Build:   docker build -t visa-estimator .
+# Run:     docker run -p 5000:5000 -p 8501:8501 -v $(pwd)/models:/app/models visa-estimator
 # ─────────────────────────────────────────────────────────────────────────────
 
-FROM python:3.10-slim AS base
+FROM python:3.10-slim
 
-# System deps for LightGBM / XGBoost / matplotlib
+# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        libgomp1 \
-        && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # ── Install Python dependencies ───────────────────────────────────────────────
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# ── Copy application code ─────────────────────────────────────────────────────
-COPY predictor.py   ./
-COPY app.py         ./
-COPY streamlit_app.py ./
-COPY start.sh       ./
-COPY models/        ./models/
+# ── Copy application source (NO model binary) ─────────────────────────────────
+COPY predictor.py app.py streamlit_app.py download_model.py start.sh ./
+COPY models/feature_names.json   models/
+COPY models/training_report.json models/
 
-# Copy only the CEAC data files needed for label-encoder reconstruction
-# (the full engineered dataset is large; copy only what predictor.py needs)
-COPY data/FY2020-ceac-current.csv   ./data/
-COPY data/FY2021-ceac-current.csv   ./data/
-COPY data/FY2022-ceac-current.csv   ./data/
-COPY data/FY2023-ceac-2023-06-24.csv ./data/
-COPY data/FY2024-ceac-2024-10-01.csv ./data/
-COPY data/FY2025-ceac-2025-10-01.csv ./data/
-COPY data/engineered_visa_dataset.csv ./data/
+# CEAC data files (needed for label-encoder reconstruction ~few MB each)
+COPY data/FY2020-ceac-current.csv      data/
+COPY data/FY2021-ceac-current.csv      data/
+COPY data/FY2022-ceac-current.csv      data/
+COPY data/FY2023-ceac-2023-06-24.csv   data/
+COPY data/FY2024-ceac-2024-10-01.csv   data/
+COPY data/FY2025-ceac-2025-10-01.csv   data/
+COPY data/engineered_visa_dataset.csv  data/
+
+# models/ dir exists but the .joblib is injected at runtime
+RUN mkdir -p models
 
 # ── Environment defaults ──────────────────────────────────────────────────────
 ENV PORT=5000 \
     STREAMLIT_PORT=8501 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+# MODEL_URL: set to auto-download model on first start
+# e.g. -e MODEL_URL="https://myblob.blob.core.windows.net/models/best_model.joblib?sv=..."
 
-# Expose Flask API + Streamlit ports
+# ── Expose ports ──────────────────────────────────────────────────────────────
 EXPOSE 5000 8501
+
+# ── Health check ──────────────────────────────────────────────────────────────
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" || exit 1
 
 RUN chmod +x start.sh
 
-# Default: launch both services
+# Default: download model if needed, then start both services
 CMD ["bash", "start.sh"]

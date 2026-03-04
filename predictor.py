@@ -158,6 +158,22 @@ class VisaPredictor:
 
     def __init__(self):
         print("[VisaPredictor] Loading model …")
+        # Auto-download the model binary if it's missing and MODEL_URL is set
+        if not os.path.exists(MODEL_PATH):
+            try:
+                from download_model import ensure_model
+                ensure_model(dest=__import__("pathlib").Path(MODEL_PATH))
+            except RuntimeError as e:
+                raise FileNotFoundError(
+                    f"\n{'='*60}\n"
+                    f"Model file not found: {MODEL_PATH}\n\n"
+                    f"The trained model (~837 MB) is not stored in git.\n"
+                    f"To provide it, choose one of:\n"
+                    f"  1. Set MODEL_URL env var to a download URL\n"
+                    f"  2. Copy best_model.joblib into the models/ folder\n"
+                    f"  3. Mount models/ as a Docker volume\n"
+                    f"{'='*60}"
+                ) from e
         self.model = joblib.load(MODEL_PATH)
 
         with open(FEATURE_NAMES_PATH) as f:

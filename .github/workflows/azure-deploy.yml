@@ -1,15 +1,16 @@
-# GitHub Actions — Deploy to Azure Web App
-# =========================================
-# Prerequisites (set in GitHub repo Secrets):
-#   AZURE_WEBAPP_PUBLISH_PROFILE  — downloaded from Azure Portal → Web App → Deployment Center
-#   AZURE_WEBAPP_NAME             — e.g. "visa-estimator"
+# GitHub Actions — CI + Deploy to Azure Web App
+# ===============================================
+# NOTE: The trained model (best_model.joblib, ~837 MB) is NOT stored in git.
+# It must be provided at runtime via one of:
+#   a) Azure App Service → Configuration → Path mappings (persistent storage)
+#   b) Set MODEL_URL secret to a public/SAS-signed URL; the app downloads on first start
+#   c) Mount an Azure File Share to /app/models/
 #
-# Azure Web App configuration:
-#   Runtime: Python 3.10
-#   Startup command:
-#     gunicorn app:app --workers 2 --timeout 120 --bind 0.0.0.0:$PORT
-# OR for Streamlit:
-#     streamlit run streamlit_app.py --server.port $PORT --server.headless true
+# Required GitHub Secrets:
+#   AZURE_WEBAPP_PUBLISH_PROFILE  — from Azure Portal → Web App → Deployment Center
+#   AZURE_WEBAPP_NAME             — e.g. "visa-estimator"
+# Optional:
+#   MODEL_URL                     — HTTPS URL to best_model.joblib (enables auto-download)
 
 name: Deploy to Azure Web App
 
@@ -20,7 +21,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  lint-and-validate:
+    name: Lint & Code Validation
     runs-on: ubuntu-latest
 
     steps:
@@ -37,18 +39,50 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Smoke-test predictor
+      # Validate imports and module structure without loading the model binary
+      - name: Validate module imports
         run: |
           python -c "
-          import json, sys
-          from predictor import get_predictor
-          p = get_predictor()
-          r = p.predict('KGL', '2024-06-15', 1000)
-          assert r['predicted_days'] > 0, 'Prediction is zero or negative'
-          print('Smoke test passed:', json.dumps({'predicted_days': r['predicted_days'], 'category': r['category']}))
+          import importlib, sys
+
+          # Verify all web-app modules are importable
+          for mod in ['flask', 'flask_cors', 'joblib', 'sklearn', 'pandas', 'numpy',
+                      'streamlit', 'requests', 'xgboost', 'lightgbm']:
+              importlib.import_module(mod)
+              print(f'  OK: {mod}')
+
+          # Check predictor syntax (do NOT instantiate — model binary not in repo)
+          import ast, pathlib
+          for src in ['predictor.py', 'app.py', 'streamlit_app.py', 'test_webapp.py', 'download_model.py']:
+              ast.parse(pathlib.Path(src).read_text(encoding='utf-8'))
+              print(f'  OK syntax: {src}')
+
+          print('All import and syntax checks passed.')
           "
 
-      - name: Deploy Flask API to Azure Web App
+      # Verify models/ metadata files (JSON — are tracked in git)
+      - name: Validate model metadata
+        run: |
+          python -c "
+          import json, pathlib
+          for f in ['models/feature_names.json', 'models/training_report.json']:
+              data = json.loads(pathlib.Path(f).read_text())
+              print(f'  OK: {f} ({len(str(data))} chars)')
+          print('Model metadata OK.')
+          "
+
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: lint-and-validate
+    # Only deploy when the Azure publish-profile secret is configured
+    if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name:        ${{ secrets.AZURE_WEBAPP_NAME }}

@@ -33,3 +33,10 @@ data/Combined_LCA_*.csv
 data/exploration_report.txt
 data/eda_run_log.txt
 data/data_summary.txt
+data/processed_visa_dataset.csv
+
+# Model binary is too large (837 MB) — do NOT send to Docker daemon.
+# Mount via volume or download via MODEL_URL at runtime instead.
+models/*.joblib
+models/*.pkl
+models/*.h5

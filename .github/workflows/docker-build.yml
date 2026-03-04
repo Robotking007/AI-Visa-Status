@@ -16,8 +16,8 @@ name: Build & Push Docker Image
 
 on:
   push:
-    branches:
-      - main
+    # Only trigger on version tags, not on every push to main
+    # (Docker secrets DOCKER_USERNAME/DOCKER_PASSWORD must be configured)
     tags:
       - "v*"
   workflow_dispatch:
