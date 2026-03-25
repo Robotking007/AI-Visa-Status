@@ -23,6 +23,8 @@ data/*.log
 models/*.joblib
 models/*.pkl
 models/*.h5
+# ...but DO commit the pre-computed stats (small JSON, needed on Streamlit Cloud)
+!models/consulate_stats.json
 
 # Temporary / debug files
 _adv_log*.txt

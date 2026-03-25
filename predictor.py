@@ -28,13 +28,14 @@ from sklearn.preprocessing import LabelEncoder
 warnings.filterwarnings("ignore")
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-BASE_DIR          = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH        = os.path.join(BASE_DIR, "models", "best_model.joblib")
-FEATURE_NAMES_PATH= os.path.join(BASE_DIR, "models", "feature_names.json")
-TRAINING_REPORT_PATH = os.path.join(BASE_DIR, "models", "training_report.json")
-ENGINEERED_DATA   = os.path.join(BASE_DIR, "data", "engineered_visa_dataset.csv")
-
-# Raw CEAC files used to recreate the label encoder (same order as training)
+BASE_DIR               = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH             = os.path.join(BASE_DIR, "models", "best_model.joblib")
+FEATURE_NAMES_PATH     = os.path.join(BASE_DIR, "models", "feature_names.json")
+TRAINING_REPORT_PATH   = os.path.join(BASE_DIR, "models", "training_report.json")
+# Pre-computed stats (committed to git — avoids loading 5 GB of CSVs on Streamlit Cloud)
+CONSULATE_STATS_PATH   = os.path.join(BASE_DIR, "models", "consulate_stats.json")
+# Fallback: raw CSV files used locally to rebuild stats when JSON is absent
+ENGINEERED_DATA        = os.path.join(BASE_DIR, "data", "engineered_visa_dataset.csv")
 RAW_CEAC_FILES = [
     os.path.join(BASE_DIR, "data", "FY2020-ceac-current.csv"),
     os.path.join(BASE_DIR, "data", "FY2021-ceac-current.csv"),
@@ -193,18 +194,43 @@ class VisaPredictor:
 
     def _build_artefacts(self):
         """
-        Recreate the LabelEncoder (same fit as in preprocessing) and build
-        a consulate-stats lookup table from the engineered dataset.
+        Load the LabelEncoder classes and consulate statistics.
+
+        Priority order:
+          1. models/consulate_stats.json  (fast, ~30 KB, committed to git)
+          2. Raw CSVs + engineered dataset (local dev fallback, ~5 GB)
         """
+        if os.path.exists(CONSULATE_STATS_PATH):
+            self._load_from_json()
+        else:
+            print("[VisaPredictor] consulate_stats.json not found — falling back to CSVs")
+            self._load_from_csvs()
+
+    def _load_from_json(self):
+        """Fast path: load pre-computed stats from the committed JSON file."""
+        with open(CONSULATE_STATS_PATH) as f:
+            data = json.load(f)
+
+        classes = data["le_classes"]
+        le = LabelEncoder()
+        le.classes_ = np.array(classes)
+        self.le = le
+        self.encoded_to_code = {i: classes[i] for i in range(len(classes))}
+        self.code_to_encoded = {v: k for k, v in self.encoded_to_code.items()}
+
+        self.consulate_stats = data["consulate_stats"]
+        self.global_stats    = data["global_stats"]
+        self.fy_min          = data["fy_min"]
+        self.fy_max          = data["fy_max"]
+
+    def _load_from_csvs(self):
+        """Slow path (local dev only): build stats from raw CSVs."""
         # 1. Recreate LabelEncoder by fitting on same raw data
         dfs = []
         for f in RAW_CEAC_FILES:
             if os.path.exists(f):
                 try:
-                    d = pd.read_csv(
-                        f, low_memory=False,
-                        usecols=["consulate", "submitDate"]
-                    )
+                    d = pd.read_csv(f, low_memory=False, usecols=["consulate", "submitDate"])
                     dfs.append(d)
                 except Exception:
                     pass
@@ -233,40 +259,31 @@ class VisaPredictor:
             stats_df = (
                 eng[stat_cols]
                 .drop_duplicates(subset=["consulate"])
-                .set_index("consulate")
+                .reset_index(drop=True)
             )
-            # Convert encoded int → 3-letter code for the key
-            stats_df = stats_df.reset_index()
-            stats_df["consulate_code"] = (
-                stats_df["consulate"].map(self.encoded_to_code)
-            )
+            stats_df["consulate_code"] = stats_df["consulate"].map(self.encoded_to_code)
             stats_df = stats_df.dropna(subset=["consulate_code"])
             self.consulate_stats = (
                 stats_df.set_index("consulate_code")
                 .to_dict(orient="index")
             )
-            # Global fallback stats
             self.global_stats = {
-                "consulate_mean_pt":      eng["consulate_mean_pt"].mean(),
-                "consulate_median_pt":    eng["consulate_median_pt"].mean(),
-                "consulate_std_pt":       eng["consulate_std_pt"].mean(),
-                "consulate_volume":       eng["consulate_volume"].mean(),
-                "consulate_approval_rate":eng["consulate_approval_rate"].mean(),
-                "consulate_ap_rate":      eng["consulate_ap_rate"].mean(),
-                "consulate_refusal_rate": eng["consulate_refusal_rate"].mean(),
-                "consulate_221g_rate":    eng["consulate_221g_rate"].mean(),
+                "consulate_mean_pt":       eng["consulate_mean_pt"].mean(),
+                "consulate_median_pt":     eng["consulate_median_pt"].mean(),
+                "consulate_std_pt":        eng["consulate_std_pt"].mean(),
+                "consulate_volume":        eng["consulate_volume"].mean(),
+                "consulate_approval_rate": eng["consulate_approval_rate"].mean(),
+                "consulate_ap_rate":       eng["consulate_ap_rate"].mean(),
+                "consulate_refusal_rate":  eng["consulate_refusal_rate"].mean(),
+                "consulate_221g_rate":     eng["consulate_221g_rate"].mean(),
             }
-
-            # Fiscal year index (min fiscal_year → 0)
-            fy_min = int(eng["fiscal_year"].min())
-            fy_max = int(eng["fiscal_year"].max())
-            self.fy_min = fy_min
-            self.fy_max = fy_max
+            self.fy_min = int(eng["fiscal_year"].min())
+            self.fy_max = int(eng["fiscal_year"].max())
         else:
             self.consulate_stats = {}
-            self.global_stats = {}
-            self.fy_min = 0
-            self.fy_max = 11
+            self.global_stats    = {}
+            self.fy_min          = 0
+            self.fy_max          = 11
 
     def _seasonal_index(self, month: int, quarter: int) -> tuple[float, float]:
         """Simple seasonal indices matching the feature-engineering logic."""
